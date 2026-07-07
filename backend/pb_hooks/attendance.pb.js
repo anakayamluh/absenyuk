@@ -32,6 +32,20 @@ onRecordBeforeCreateRequest((e) => {
     const lon = record.get("longitude");
     const userId = record.get("user");
 
+    // 0. Security Validation
+    if (type === "clock_in") {
+        const isBiometric = record.get("is_biometric_verified");
+        const blinkDetected = record.get("blink_detected");
+        const smileDetected = record.get("smile_detected");
+
+        if (!isBiometric) {
+            throw new BadRequestError("Biometric verification is mandatory for clock-in.");
+        }
+        if (!blinkDetected || !smileDetected) {
+            throw new BadRequestError("Liveness detection (blink & smile) is mandatory for clock-in.");
+        }
+    }
+
     // 1. Geofencing check (Haversine)
     const sites = $app.dao().findRecordsByFilter("sites", "is_active = true");
     let isWithinAnyGeofence = false;
